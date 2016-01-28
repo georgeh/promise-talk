@@ -20,11 +20,11 @@
             <section>
                 <h2>New Music Friday Bot</h2>
                 <ul>
-                    <li>Load New Music Friday Playlist</li>
-                    <li>Post Playlist</li>
-                    <li>Sticky Playlist</li>
-                    <li>Post Tracks</li>
-                    <li>Announce Success</li>
+                    <li class="fragment">Load New Music Friday Playlist</li>
+                    <li class="fragment">Post Playlist</li>
+                    <li class="fragment">Sticky Playlist</li>
+                    <li class="fragment">Post Tracks</li>
+                    <li class="fragment">Announce Success</li>
                 </ul>
             </section>
             <section>
@@ -157,69 +157,52 @@ function onTrackPosted(title, i) {
             <section>
                 <h2>Promises</h2>
 
-                <p>What is a Promise?</p>
+                <h3>What is a Promise?</h3>
 
-                <p>Depends on who you ask.</p>
+                <p class="fragment">It is a <strong>Promise</strong> for a value. Eventually.</p>
+                <p class="fragment">Use it when you want to pass around a value you don't have yet, like an HTTP response.</p>
             </section>
             <section>
                 <h2>Promises</h2>
+                <h3>How do I know if I have a Promise?</h3>
                 <h3><a href="https://promisesaplus.com/">Promises/A+ Spec</a></h3>
                 <blockquote>“promise” is an object or function with a then method whose behavior conforms to this specification.</blockquote>
             </section>
 
             <section>
                 <h2>Promises</h2>
+                <h3>How do I know if I have a Promise?</h3>
                 <h3><a href="http://www.ecma-international.org/ecma-262/6.0/">ECMAScript® 2015 Language Specification</a></h3>
                 <blockquote>
                     <p>Promise instances are ordinary objects that inherit properties from the Promise prototype object (the
                         intrinsic, %PromisePrototype%). Promise instances are initially created with the internal slots described
-                        in <a href="#table-59">Table
-      59</a>.</p>
-                    <figure>
-                        <figcaption><span id="table-59">Table 59</span> — Internal Slots of Promise Instances</figcaption>
-                        <table class="real-table">
-                            <tbody>
-                                <tr>
-                                    <th>Internal Slot</th>
-                                    <th>Description</th>
-                                </tr>
-                                <tr>
-                                    <td>[[PromiseState]]</td>
-                                    <td>A String value that governs how a promise will react to incoming calls to its <code>then</code>                                        method. The possible values are: <code>"pending"</code><span style="font-family: Times New Roman">,</span>                                        <code>"fulfilled"</code>, and <code>"rejected"</code><span style="font-family: Times New Roman">.</span></td>
-                                </tr>
-                                <tr>
-                                    <td>[[PromiseResult]]</td>
-                                    <td>The value with which the promise has been fulfilled or rejected, if any. Only meaningful
-                                        if <span style="font-family: Times New Roman">[[PromiseState]]</span> is not <code>"pending"</code>.</td>
-                                </tr>
-                                <tr>
-                                    <td>[[PromiseFulfillReactions]]</td>
-                                    <td>A <a href="#sec-list-and-record-specification-type">List</a> of PromiseReaction records
-                                        to be processed when/if the promise transitions from the <code>"pending"</code> state
-                                        to the <code>"fulfilled"</code> state.</td>
-                                </tr>
-                                <tr>
-                                    <td>[[PromiseRejectReactions]]</td>
-                                    <td>A <a href="#sec-list-and-record-specification-type">List</a> of PromiseReaction records
-                                        to be processed when/if the promise transitions from the <code>"pending"</code> state
-                                        to the <code>"rejected"</code> state.</td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </figure>
+                        in Table 59.</p>
                 </blockquote>
             </section>
             <section>
                 <h2>Promises</h2>
-                <p>TODO: Duck picture</p>
-                <p>basically anything with a <code>.then()</code> method</p>
+                <h3>How do I know if I have a Promise?</h3>
+                <img class="fragment" src="img/duck_typing.jpg" alt="Duck Typed">
+                <p class="fragment">Basically anything with a <code>.then()</code> method</p>
+            </section>
+            <section>
+                <h2>Promises</h2>
+                <h3>States</h3>
+                <ul>
+                    <li>Pending</li>
+                    <li>Resolved → <code>.then()</code></li>
+                    <li>Rejected → <code>.catch()</code></li>
+                </ul>
+                <br>
+                <strong class="fragment">If you have a Promise and you want to know its state you're Doing It Wrong.</strong>
+                <aside class="notes">It means you're trying to deal with async code in a synchronous manner</aside>
             </section>
             <section>
                 <h2>New Music Friday Bot</h2>
                 <h3>Load New Music Friday Playlist</h3>
                 <pre><code>spotifyApi.clientCredentialsGrant()
-  .then(function(data) {
-    spotifyApi.setAccessToken(data.body['access_token']);
+  .then(function(credentials) {
+    spotifyApi.setAccessToken(credentials.body['access_token']);
     spotifyApi.getPlaylist('spotify', 'NewMusicFriday');
   })</code></pre>
             </section>
@@ -257,8 +240,8 @@ function onTrackPosted(title, i) {
                 <h2>New Music Friday Bot</h2>
                 <h3>Load New Music Friday Playlist</h3>
                 <pre><code>spotifyApi.clientCredentialsGrant()
-  .then(function(data) {
-    spotifyApi.setAccessToken(data.body['access_token']);
+  .then(function(credentials) {
+    spotifyApi.setAccessToken(credentials.body['access_token']);
     return spotifyApi.getPlaylist('spotify', 'NewMusicFriday');
   })
   .then(function(playlist) {
@@ -274,6 +257,28 @@ function onTrackPosted(title, i) {
   })</code></pre>
             </section>
             <section>
+                <h2>New Music Friday Bot</h2>
+                <h3>Load New Music Friday Playlist</h3>
+                <pre><code data-noescape>var <mark>credentialPromise</mark> = spotifyApi.clientCredentialsGrant();
+var <mark>playlistPromise</mark> = <mark>credentialPromise</mark>.then(function(credentials) {
+  spotifyApi.setAccessToken(credentials.body['access_token']);
+  return spotifyApi.getPlaylist('spotify', 'NewMusicFriday');
+});
+
+var <mark>redditPostPromise</mark> = <mark>playlistPromise</mark>.then(function(playlist) {
+  reddit('/api/submit').post({
+      'api_type': 'json',
+      'kind': 'link',
+      'resubmit': true,
+      'sendreplies': false,
+      'sr': 'NewMusicFriday',
+      'title': _.get(spotifyRes, 'body.name') + ' - ' + moment().format('MMMM Do, YYYY'),
+      'url': _.get(spotifyRes, 'body.external_urls.spotify')
+  })
+});</code></pre>
+            <aside class="notes">This is the same code as the last slide with the explicit Promises broken out</aside>
+            </section>
+            <section>
                 <h2><code>.then()</code> Rule #2</h2>
                 <p>If you return nothing from a <code>.then()</code>, the Promise value stays the same.</p>
             </section>
@@ -285,8 +290,8 @@ function onTrackPosted(title, i) {
   .then(getPlaylist)
   .then(postPlaylist)
   
-function saveAccessToken(data) {
-  spotifyApi.setAccessToken(data.body['access_token']);
+function saveAccessToken(credentials) {
+  spotifyApi.setAccessToken(credentials.body['access_token']);
 }
 
 function getPlaylist() {
@@ -335,7 +340,7 @@ function stickyPlaylist(redditPostRes) {
 function postTracks(???) {
 
 }</code></pre>
-<aside class="notes">We need the result of getPlaylist() and postPlaylist()!</aside>
+                <aside class="notes">What are the arguments here? We need the result of getPlaylist() and postPlaylist()!</aside>
             </section>
             <section>
                 <h2>Promise.all()</h2>
@@ -397,13 +402,16 @@ function postTracks(playlist, redditPost) {
                 'text': '[' + title + '](' + _.get(item, 'track.external_urls.spotify') + ')',
                 'thing_id': redditPost.json.data.name
             })
-            .then(console.log.bind(console, 'Posted ' + title));
+            .then(function() {
+                console.log('Posted ' + title);
+            });
     }));
 }</code></pre>
                 <aside class="notes">
-                    Remember Anti-Pattern #1 - calling a <code>.then()</code> from inside <code>.then()</code>?
-                    Not applicable here because <i>waves hands and trails off</i><br>
-                    Real reason - we could attach another method after <code>postTracks()</code>, or can consider the Track -> Promise map to be its own Promise chain.
+                    Remember Anti-Pattern #1 - calling a <code>.then()</code> from inside <code>.then()</code>? Not applicable
+                    here because <i>waves hands and trails off</i>
+                    <br> Real reason - we could attach another method after <code>postTracks()</code>, or can consider the Track
+                    -> Promise map to be its own Promise chain.
                 </aside>
             </section>
             <section>
@@ -443,7 +451,32 @@ function onTrackPosted(title, i) {
   .then(postPlaylist)
   .then(stickyPlaylist)
   .then(postTracks)
-  .catch(console.error.bind(console, arguments))</code></pre>
+  .then(console.log.bind(console, 'DONE!'))
+  .catch(console.error.bind(console))</code></pre>
+            </section>
+            <section>
+                <h2>The Future!</h2>
+                <h3>🔮</h3>
+            </section>
+            <section>
+                <h2>The Future!</h2>
+                <pre><code>try {
+  let credentials = await spotifyApi.clientCredentialsGrant();
+  spotifyApi.setAccessToken(credentials.body['access_token']);
+  let playlist = await getPlaylist();
+  let redditPost = await postPlaylist(playlist);
+  await Promise.all([
+    stickyPlaylist(playlist, redditPost),
+    postTracks(playlist, redditPost)
+  ]);
+  console.log('DONE!');
+} catch (err) {
+  console.error(err);
+}
+
+async function postPlaylist(playlist) {
+  return reddit('/api/submit').post({…});
+}</code></pre>
             </section>
         </div>
     </div>
@@ -451,6 +484,7 @@ function onTrackPosted(title, i) {
     <script src="js/reveal.js"></script>
     <script>
         Reveal.initialize({
+                controls: false,
                 slideNumber: 'c/t',
                 
                 // Optional reveal.js plugins
