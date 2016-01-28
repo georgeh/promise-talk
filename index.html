@@ -29,8 +29,7 @@
             </section>
             <section>
                 <h2>Callbacks</h2>
-                <pre><code class="javascript">
-spotifyApi.clientCredentialsGrant(function(err, credentials) {
+                <pre><code>spotifyApi.clientCredentialsGrant(function(err, credentials) {
     if (err) return err;
 
     spotifyApi.setAccessToken(credentials.body['access_token']);
@@ -84,8 +83,7 @@ spotifyApi.clientCredentialsGrant(function(err, credentials) {
                     supported callbacks.</aside>
             </section>
             <section>
-                <h2>OK, Better Callbacks</h2><pre><code>
-spotifyApi.clientCredentialsGrant(function (err, credentials) {
+                <h2>OK, Better Callbacks</h2><pre><code>spotifyApi.clientCredentialsGrant(function (err, credentials) {
     if (err) return err;
 
     spotifyApi.setAccessToken(credentials.body['access_token']);
@@ -219,22 +217,16 @@ function onTrackPosted(title, i) {
             <section>
                 <h2>New Music Friday Bot</h2>
                 <h3>Load New Music Friday Playlist</h3>
-                <pre>
-                    <code>
-spotifyApi.clientCredentialsGrant()
+                <pre><code>spotifyApi.clientCredentialsGrant()
   .then(function(data) {
     spotifyApi.setAccessToken(data.body['access_token']);
     spotifyApi.getPlaylist('spotify', 'NewMusicFriday');
-  })
-                    </code>
-                </pre>
+  })</code></pre>
             </section>
             <section>
                 <h2>New Music Friday Bot</h2>
                 <h3>Post Playlist</h3>
-                <pre>
-                    <code>
-spotifyApi.clientCredentialsGrant()
+                <pre><code>spotifyApi.clientCredentialsGrant()
   .then(function(data) {
     spotifyApi.setAccessToken(data.body['access_token']);
     spotifyApi.getPlaylist('spotify', 'NewMusicFriday')
@@ -249,25 +241,22 @@ spotifyApi.clientCredentialsGrant()
                 'url': _.get(spotifyRes, 'body.external_urls.spotify')
             }))
         })
-  })
-                    </code>
-                </pre>
+  })</code></pre>
                 <aside class="notes">You can see the Pyramid of Doom growing</aside>
             </section>
             <section>
                 <h2>Promise Anti-Pattern #1</h2>
-                <h3>Calling <code>.then()</code> Inside a <code>.then()</code></h3>
+                <p>Calling <code>.then()</code> Inside a <code>.then()</code></p>
             </section>
-            <!--<section>
-                <h2>Promise Rule #1</h2>
+            <section>
+                <h2><code>.then()</code> Rule #1</h2>
                 <p>If you return a Promise from a <code>.then()</code> the outer Promise becomes the inner Promise</p>
-            </section>-->
+                <aside class="notes">That means that the chain will become unresolved and will wait to call <code>.then()</code></aside>
+            </section>
             <section>
                 <h2>New Music Friday Bot</h2>
                 <h3>Load New Music Friday Playlist</h3>
-                <pre>
-                    <code>
-spotifyApi.clientCredentialsGrant()
+                <pre><code>spotifyApi.clientCredentialsGrant()
   .then(function(data) {
     spotifyApi.setAccessToken(data.body['access_token']);
     return spotifyApi.getPlaylist('spotify', 'NewMusicFriday');
@@ -282,13 +271,179 @@ spotifyApi.clientCredentialsGrant()
         'title': _.get(spotifyRes, 'body.name') + ' - ' + moment().format('MMMM Do, YYYY'),
         'url': _.get(spotifyRes, 'body.external_urls.spotify')
     })
-  })
-                    </code>
-                </pre>
+  })</code></pre>
             </section>
             <section>
-                <h2>Rule #1</h2>
-                <p>If you return a Promise from a <code>.then()</code> the outer Promise becomes the inner Promise</p>
+                <h2><code>.then()</code> Rule #2</h2>
+                <p>If you return nothing from a <code>.then()</code>, the Promise value stays the same.</p>
+            </section>
+            <section>
+                <h2>New Music Friday Bot</h2>
+                <h3>Refactor!</h3>
+                <pre><code>spotifyApi.clientCredentialsGrant()
+  .then(saveAccessToken)
+  .then(getPlaylist)
+  .then(postPlaylist)
+  
+function saveAccessToken(data) {
+  spotifyApi.setAccessToken(data.body['access_token']);
+}
+
+function getPlaylist() {
+    return spotifyApi.getPlaylist('spotify', 'NewMusicFriday');
+}
+
+function postPlaylist(playlist) {
+  return reddit('/api/submit').post({
+    'api_type': 'json',
+    'kind': 'link',
+    'resubmit': true,
+    'sendreplies': false,
+    'sr': 'NewMusicFriday',
+    'title': _.get(spotifyRes, 'body.name') + ' - ' + moment().format('MMMM Do, YYYY'),
+    'url': _.get(spotifyRes, 'body.external_urls.spotify')
+  });
+}</code></pre>
+            </section>
+            <section>
+                <h2>New Music Friday Bot</h2>
+                <h3>Sticky Playlist</h3>
+                <pre><code>spotifyApi.clientCredentialsGrant()
+  .then(saveAccessToken)
+  .then(getPlaylist)
+  .then(postPlaylist)
+  .then(stickyPlaylist)
+…
+function stickyPlaylist(redditPostRes) {
+  return reddit('/api/set_subreddit_sticky').post({
+    id: redditPostRes.json.data.name,
+    num: 1,
+    state: true
+  });
+}</code></pre>
+            </section>
+            <section>
+                <h2>New Music Friday Bot</h2>
+                <h3>Post Tracks</h3>
+                <pre><code>spotifyApi.clientCredentialsGrant()
+  .then(saveAccessToken)
+  .then(getPlaylist)
+  .then(postPlaylist)
+  .then(stickyPlaylist)
+  .then(postTracks)
+…
+function postTracks(???) {
+
+}</code></pre>
+<aside class="notes">We need the result of getPlaylist() and postPlaylist()!</aside>
+            </section>
+            <section>
+                <h2>Promise.all()</h2>
+                <aside class="notes">
+                    <ul>
+                        <li>Takes an array of Promise and non-Promise values</li>
+                        <li>Waits for them all to be resolved</li>
+                        <li>Calls <code>.then()</code> with all resolved values</li>
+                    </ul>
+                </aside>
+            </section>
+            <section>
+                <h2>Refactor!</h2>
+                <pre><code>spotifyApi.clientCredentialsGrant()
+  .then(saveAccessToken)
+  .then(getPlaylist)
+  .then(postPlaylist)
+  .then(stickyPlaylist)
+…
+function postPlaylist(playlist) {
+  return Promise.all([playlist, reddit('/api/submit').post({
+    'api_type': 'json',
+    'kind': 'link',
+    'resubmit': true,
+    'sendreplies': false,
+    'sr': 'NewMusicFriday',
+    'title': _.get(spotifyRes, 'body.name') + ' - ' + moment().format('MMMM Do, YYYY'),
+    'url': _.get(spotifyRes, 'body.external_urls.spotify')
+  })]);
+}
+
+function stickyPlaylist(playlist, redditPost) {
+  return Promise.all([playlist, redditPost, reddit('/api/set_subreddit_sticky').post({
+    id: redditPost.json.data.name,
+    num: 1,
+    state: true
+  })]);
+}
+</code></pre>
+                <aside class="notes">We are now using <code>Promise.all()</code> to collect the results we need</aside>
+            </section>
+            <section>
+                <h2>New Music Friday Bot</h2>
+                <h3>Post Tracks</h3>
+                <pre><code>spotifyApi.clientCredentialsGrant()
+  .then(saveAccessToken)
+  .then(getPlaylist)
+  .then(postPlaylist)
+  .then(stickyPlaylist)
+  .then(postTracks)
+…
+function postTracks(playlist, redditPost) {
+    return Promise.all(playlist.body.tracks.items.map(function(item) {
+        var artists = item.track.artists.map(function (a) { return a.name; }).join(', ');
+        var title = artists + ' - ' + item.track.name;
+
+        return reddit('/api/comment').post({
+                'api_type': 'json',
+                'text': '[' + title + '](' + _.get(item, 'track.external_urls.spotify') + ')',
+                'thing_id': redditPost.json.data.name
+            })
+            .then(console.log.bind(console, 'Posted ' + title));
+    }));
+}</code></pre>
+                <aside class="notes">
+                    Remember Anti-Pattern #1 - calling a <code>.then()</code> from inside <code>.then()</code>?
+                    Not applicable here because <i>waves hands and trails off</i><br>
+                    Real reason - we could attach another method after <code>postTracks()</code>, or can consider the Track -> Promise map to be its own Promise chain.
+                </aside>
+            </section>
+            <section>
+                <h2>Error Handling</h2>
+                <pre><code>spotifyApi.clientCredentialsGrant(function (err, credentials) {
+    if (err) return err;
+    …
+});
+function postPlaylist(err, spotifyResArg) {
+    if (err) return err;
+…
+}
+
+function stickyPlaylist(err, redditPostRes) {
+    if (err) return err;
+…
+}
+
+function postTracks(err) {
+    if (err) return err;
+…
+}
+
+function onTrackPosted(title, i) {
+    return function (err) {
+        if (err) return err;
+…
+        }
+    }
+}</code></pre>
+            </section>
+            <section>
+                <h2>Error Handling</h2>
+                <pre><code>spotifyApi.clientCredentialsGrant()
+  .then(saveAccessToken)
+  .then(getPlaylist)
+  .then(postPlaylist)
+  .then(stickyPlaylist)
+  .then(postTracks)
+  .catch(console.error.bind(console, arguments))</code></pre>
             </section>
         </div>
     </div>
