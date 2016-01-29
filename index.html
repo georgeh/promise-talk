@@ -11,7 +11,7 @@
     <div class="reveal">
         <div class="slides">
             <section>
-                <h1>Promises - Escape From Callback Hell</h1>
+                <h1>Promises - Escape from the Planet of the Callbacks</h1>
                 <p>George Hotelling - Progressive Leasing</p>
             </section>
             <section><img src="img/adam.png" alt="Adam"></section>
@@ -22,8 +22,8 @@
                 <ul>
                     <li class="fragment">Load New Music Friday Playlist</li>
                     <li class="fragment">Post Playlist</li>
-                    <li class="fragment">Sticky Playlist</li>
-                    <li class="fragment">Post Tracks</li>
+                    <li class="fragment">Make Playlist Sticky</li>
+                    <li class="fragment">Post Tracks as Comments</li>
                     <li class="fragment">Announce Success</li>
                 </ul>
             </section>
@@ -148,8 +148,7 @@ function onTrackPosted(title, i) {
     }
 }
                 </code></pre>
-                <aside class="notes">This code is for illustration purposes only and probably wouldn't work even if you could find an API that
-                    supported callbacks.</aside>
+                <aside class="notes">Still bad code, just not as ugly. Highly coupled, brittle.</aside>
             </section>
             <section>
                 <h2>Promises!</h2>
@@ -159,8 +158,8 @@ function onTrackPosted(title, i) {
 
                 <h3>What is a Promise?</h3>
 
-                <p class="fragment">It is a <strong>Promise</strong> for a value. Eventually.</p>
-                <p class="fragment">Use it when you want to pass around a value you don't have yet, like an HTTP response.</p>
+                <p class="fragment">It is a <strong>Promise</strong> for a value. <span class="fragment">Eventually.</span></p>
+                <p class="fragment">For when you want to pass around a value you don't have yet.</p>
             </section>
             <section>
                 <h2>Promises</h2>
@@ -198,6 +197,23 @@ function onTrackPosted(title, i) {
                 <aside class="notes">It means you're trying to deal with async code in a synchronous manner</aside>
             </section>
             <section>
+                <h2>How to create Promises</h2>
+                <pre><code>var promise = new Promise(function(resolve, reject) {
+  try {
+    …
+    resolve(value);
+  } catch(e) {
+    reject(e);
+  }
+}));</code></pre>
+            </section>
+            <section>
+                <h2>Promise Superpower #1: <code>Promise.resolve()</code></h2>
+                <pre><code>var resolvedPromise = Promise.resolve(foo);</code></pre>
+                <h2>Promise Superpower #2: <code>Promise.reject()</code></h2>
+                <pre><code>var rejectededPromise = Promise.reject(bar);</code></pre>
+            </section>
+            <section>
                 <h2>New Music Friday Bot</h2>
                 <h3>Load New Music Friday Playlist</h3>
                 <pre><code>spotifyApi.clientCredentialsGrant()
@@ -210,8 +226,8 @@ function onTrackPosted(title, i) {
                 <h2>New Music Friday Bot</h2>
                 <h3>Post Playlist</h3>
                 <pre><code>spotifyApi.clientCredentialsGrant()
-  .then(function(data) {
-    spotifyApi.setAccessToken(data.body['access_token']);
+  .then(function(credentials) {
+    spotifyApi.setAccessToken(credentials.body['access_token']);
     spotifyApi.getPlaylist('spotify', 'NewMusicFriday')
         .then(function(playlist) {
             reddit('/api/submit').post({
@@ -220,16 +236,43 @@ function onTrackPosted(title, i) {
                 'resubmit': true,
                 'sendreplies': false,
                 'sr': 'NewMusicFriday',
-                'title': _.get(spotifyRes, 'body.name') + ' - ' + moment().format('MMMM Do, YYYY'),
-                'url': _.get(spotifyRes, 'body.external_urls.spotify')
+                'title': _.get(playlist, 'body.name') + ' - ' + moment().format('MMMM Do, YYYY'),
+                'url': _.get(playlist, 'body.external_urls.spotify')
             }))
-        })
-  })</code></pre>
+        });
+  });</code></pre>
                 <aside class="notes">You can see the Pyramid of Doom growing</aside>
             </section>
             <section>
                 <h2>Promise Anti-Pattern #1</h2>
                 <p>Calling <code>.then()</code> Inside a <code>.then()</code></p>
+            </section>
+            <section>
+                <h2>New Music Friday Bot</h2>
+                <h3>Post Playlist</h3>
+                <pre><code>var playlistPromise = new Promise(function(resolve, reject) {
+  spotifyApi.clientCredentialsGrant()
+    .then(function(credentials) {
+      spotifyApi.setAccessToken(credentials.body['access_token']);
+      spotifyApi.getPlaylist('spotify', 'NewMusicFriday')
+        .then(resolve)
+    })
+});
+
+playlistPromise.then(function(playlist) {
+  reddit('/api/submit').post({
+      …
+      'sr': 'NewMusicFriday',
+      'title': _.get(playlist, 'body.name') + ' - ' + moment().format('MMMM Do, YYYY'),
+      'url': _.get(playlist, 'body.external_urls.spotify')
+  })
+});</code></pre>
+            </section>
+            <section>
+                <h2>Promise Anti-Pattern #2</h2>
+                <p>You (almost) never need to create a new, pending Promise!</p>
+                <p><code>Promise.resolve()</code> and <code>Promise.reject()</code> are OK</p>
+                <aside class="notes">Exception is when you are converting non-Promise async code to Promises</aside>
             </section>
             <section>
                 <h2><code>.then()</code> Rule #1</h2>
@@ -251,8 +294,8 @@ function onTrackPosted(title, i) {
         'resubmit': true,
         'sendreplies': false,
         'sr': 'NewMusicFriday',
-        'title': _.get(spotifyRes, 'body.name') + ' - ' + moment().format('MMMM Do, YYYY'),
-        'url': _.get(spotifyRes, 'body.external_urls.spotify')
+        'title': _.get(playlist, 'body.name') + ' - ' + moment().format('MMMM Do, YYYY'),
+        'url': _.get(playlist, 'body.external_urls.spotify')
     })
   })</code></pre>
             </section>
@@ -272,11 +315,11 @@ var <mark>redditPostPromise</mark> = <mark>playlistPromise</mark>.then(function(
       'resubmit': true,
       'sendreplies': false,
       'sr': 'NewMusicFriday',
-      'title': _.get(spotifyRes, 'body.name') + ' - ' + moment().format('MMMM Do, YYYY'),
-      'url': _.get(spotifyRes, 'body.external_urls.spotify')
+      'title': _.get(playlist, 'body.name') + ' - ' + moment().format('MMMM Do, YYYY'),
+      'url': _.get(playlist, 'body.external_urls.spotify')
   })
 });</code></pre>
-            <aside class="notes">This is the same code as the last slide with the explicit Promises broken out</aside>
+                <aside class="notes">This is the same code as the last slide with the explicit Promises broken out.</aside>
             </section>
             <section>
                 <h2><code>.then()</code> Rule #2</h2>
@@ -295,19 +338,11 @@ function saveAccessToken(credentials) {
 }
 
 function getPlaylist() {
-    return spotifyApi.getPlaylist('spotify', 'NewMusicFriday');
+  return spotifyApi.getPlaylist('spotify', 'NewMusicFriday');
 }
 
 function postPlaylist(playlist) {
-  return reddit('/api/submit').post({
-    'api_type': 'json',
-    'kind': 'link',
-    'resubmit': true,
-    'sendreplies': false,
-    'sr': 'NewMusicFriday',
-    'title': _.get(spotifyRes, 'body.name') + ' - ' + moment().format('MMMM Do, YYYY'),
-    'url': _.get(spotifyRes, 'body.external_urls.spotify')
-  });
+  return reddit('/api/submit').post({…});
 }</code></pre>
             </section>
             <section>
@@ -330,10 +365,10 @@ function stickyPlaylist(redditPostRes) {
             <section>
                 <h2>New Music Friday Bot</h2>
                 <h3>Post Tracks</h3>
-                <pre><code>spotifyApi.clientCredentialsGrant()
+                <pre><code data-noescape>spotifyApi.clientCredentialsGrant()
   .then(saveAccessToken)
-  .then(getPlaylist)
-  .then(postPlaylist)
+  .then(<mark>getPlaylist</mark>)
+  .then(<mark>postPlaylist</mark>)
   .then(stickyPlaylist)
   .then(postTracks)
 …
@@ -343,7 +378,7 @@ function postTracks(???) {
                 <aside class="notes">What are the arguments here? We need the result of getPlaylist() and postPlaylist()!</aside>
             </section>
             <section>
-                <h2>Promise.all()</h2>
+                <h2>Promise Superpower #3: <code>Promise.all()</code></h2>
                 <aside class="notes">
                     <ul>
                         <li>Takes an array of Promise and non-Promise values</li>
@@ -361,23 +396,11 @@ function postTracks(???) {
   .then(stickyPlaylist)
 …
 function postPlaylist(playlist) {
-  return Promise.all([playlist, reddit('/api/submit').post({
-    'api_type': 'json',
-    'kind': 'link',
-    'resubmit': true,
-    'sendreplies': false,
-    'sr': 'NewMusicFriday',
-    'title': _.get(spotifyRes, 'body.name') + ' - ' + moment().format('MMMM Do, YYYY'),
-    'url': _.get(spotifyRes, 'body.external_urls.spotify')
-  })]);
+  return Promise.all([playlist, reddit('/api/submit').post({…})]);
 }
 
 function stickyPlaylist(playlist, redditPost) {
-  return Promise.all([playlist, redditPost, reddit('/api/set_subreddit_sticky').post({
-    id: redditPost.json.data.name,
-    num: 1,
-    state: true
-  })]);
+  return Promise.all([playlist, redditPost, reddit('/api/set_subreddit_sticky').post({…})]);
 }
 </code></pre>
                 <aside class="notes">We are now using <code>Promise.all()</code> to collect the results we need</aside>
@@ -477,6 +500,17 @@ function onTrackPosted(title, i) {
 async function postPlaylist(playlist) {
   return reddit('/api/submit').post({…});
 }</code></pre>
+            </section>
+            <section>
+                <h3><code>.then()</code> Rules:</h3>
+                <ol>
+                    <li>If you return a Promise from a <code>.then()</code> the outer Promise becomes the inner Promise</li>
+                    <li>If you return nothing from a <code>.then()</code>, the Promise value stays the same.</li>
+                </ol>
+            </section>
+            <section>
+                <h1>Questions?</h1>
+                <p>Ask in the #javascript room in Slack</p>
             </section>
         </div>
     </div>
