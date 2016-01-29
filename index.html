@@ -2,6 +2,7 @@
 <html lang="en">
 
 <head>
+    <meta charset="UTF-8">
     <link rel="stylesheet" href="css/reveal.css">
     <link rel="stylesheet" href="css/theme/league.css">
     <link rel="stylesheet" href="lib/css/zenburn.css">
@@ -14,9 +15,9 @@
                 <h1>Promises - Escape from the Planet of the Callbacks</h1>
                 <p>George Hotelling - Progressive Leasing</p>
             </section>
-            <section><img src="img/adam.png" alt="Adam"></section>
-            <section><img src="img/spotify.png" alt="Spotify"></section>
-            <section><img src="img/r-newmusicfriday.png" alt="/r/NewMusicFriday"></section>
+            <section><img src="images/adam.png" alt="Adam"></section>
+            <section><img src="images/spotify.png" alt="Spotify"></section>
+            <section><img src="images/r-newmusicfriday.png" alt="/r/NewMusicFriday"></section>
             <section>
                 <h2>New Music Friday Bot</h2>
                 <ul>
@@ -191,7 +192,7 @@ function onTrackPosted(title, i) {
             </section>
             <section>
                 <h2>Browser Support Dec. 2015</h2>
-                <a href="http://caniuse.com/#feat=promises"><img src="img/caniuse-dec-2015.png" alt="Can I Use graph"></a>
+                <a href="http://caniuse.com/#feat=promises"><img src="images/caniuse-dec-2015.png" alt="Can I Use graph"></a>
             </section>
             <section>
                 <h2>New Music Friday Bot</h2>
@@ -570,7 +571,9 @@ async function postPlaylist(playlist) {
                     { src: 'plugin/markdown/markdown.js', condition: function() { return !!document.querySelector( '[data-markdown]' ); } },
                     { src: 'plugin/highlight/highlight.js', async: true, callback: function() { hljs.initHighlightingOnLoad(); } },
                     { src: 'plugin/zoom-js/zoom.js', async: true },
-                    { src: 'plugin/notes/notes.js', async: true }
+                    { src: 'plugin/notes/notes.js', async: true },
+                    { src: 'socket.io/socket.io.js', async: true },
+                    { src: 'plugin/notes-server/client.js', async: true }
                 ]
             });
     </script>
