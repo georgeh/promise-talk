@@ -30,60 +30,60 @@
             <section>
                 <h2>Callbacks</h2>
                 <pre><code>spotifyApi.clientCredentialsGrant(function(err, credentials) {
+  if (err) return err;
+
+  spotifyApi.setAccessToken(credentials.body['access_token']);
+  return spotifyApi.getPlaylist('spotify', 'NewMusicFriday', function postPlaylist(err, spotifyRes) {
     if (err) return err;
 
-    spotifyApi.setAccessToken(credentials.body['access_token']);
-    return spotifyApi.getPlaylist('spotify', 'NewMusicFriday', function postPlaylist(err, spotifyRes) {
+    return reddit('/api/submit').post({
+      'api_type': 'json',
+      'kind': 'link',
+      'resubmit': true, 
+      'sendreplies': false,
+      'sr': config.reddit.subreddit,
+      'title': _.get(spotifyRes, 'body.name') + ' - ' + moment().format('MMMM Do, YYYY'),
+      'url': _.get(spotifyRes, 'body.external_urls.spotify')
+    }, function(err, redditPostRes) {
+      if (err) return err;
+
+      return reddit('/api/set_subreddit_sticky').post({
+        id: redditPostRes.json.data.name,
+        num: 1,
+        state: true
+      }, function(err) {
         if (err) return err;
 
-        return reddit('/api/submit').post({
-                'api_type': 'json',
-                'kind': 'link',
-                'resubmit': true, 
-                'sendreplies': false,
-                'sr': config.reddit.subreddit,
-                'title': _.get(spotifyRes, 'body.name') + ' - ' + moment().format('MMMM Do, YYYY'),
-                'url': _.get(spotifyRes, 'body.external_urls.spotify')
-            }, function(err, redditPostRes) {
-                if (err) return err;
-                
-                return reddit('/api/set_subreddit_sticky').post({
-                        id: redditPostRes.json.data.name,
-                        num: 1,
-                        state: true
-                    }, function(err) {
-                        if (err) return err;
-                        
-                        var trackPosted = [].fill(false, 0, spotifyRes.body.tracks.items.length - 1);
-                        
-                        for (var i=0; i < spotifyRes.body.tracks.items.length; i++) {
-                            var item = spotifyRes.body.tracks.items[i];
-                            var artists = item.track.artists.map(function (a) { return a.name; }).join(', ');
-                            var title = artists + ' - ' + item.track.name;
+        var trackPosted = [].fill(false, 0, spotifyRes.body.tracks.items.length - 1);
 
-                            reddit('/api/comment').post({
-                                    'api_type': 'json',
-                                    'text': '[' + title + '](' + _.get(item, 'track.external_urls.spotify') + ')',
-                                    'thing_id': spotifyRes.reddit.json.data.name
-                            }, function(err) {
-                                if (err) return err;
-                                console.log('Posted ' + title);
-                                trackPosted[i] = true;
-                                if (trackPosted.every((trackDone) => trackDone)) {
-                                    console.log('DONE!');
-                                }
-                            });
-                        }
-                    });
-            });
+        for (var i=0; i < spotifyRes.body.tracks.items.length; i++) {
+          var item = spotifyRes.body.tracks.items[i];
+          var artists = item.track.artists.map((a) => a.name).join(', ');
+          var title = artists + ' - ' + item.track.name;
+
+          reddit('/api/comment').post({
+            'api_type': 'json',
+            'text': '[' + title + '](' + _.get(item, 'track.external_urls.spotify') + ')',
+            'thing_id': spotifyRes.reddit.json.data.name
+          }, function(err) {
+            if (err) return err;
+            console.log('Posted ' + title);
+            trackPosted[i] = true;
+            if (trackPosted.every((trackDone) => trackDone)) {
+              console.log('DONE!');
+            }
+          });
+        }
+      });
     });
-});
-                </code></pre>
+  });
+});</code></pre>
                 <aside class="notes">This code is for illustration purposes only and probably wouldn't work even if you could find an API that
                     supported callbacks.</aside>
             </section>
             <section>
-                <h2>OK, Better Callbacks</h2><pre><code>spotifyApi.clientCredentialsGrant(function (err, credentials) {
+                <h2>OK, Better Callbacks</h2>
+                <pre><code>spotifyApi.clientCredentialsGrant(function (err, credentials) {
     if (err) return err;
 
     spotifyApi.setAccessToken(credentials.body['access_token']);
@@ -93,61 +93,60 @@
 var spotifyRes;
 
 function postPlaylist(err, spotifyResArg) {
-    if (err) return err;
+  if (err) return err;
 
-    spotifyRes = spotifyResArg;
+  spotifyRes = spotifyResArg;
 
-    return reddit('/api/submit').post({
-        'api_type': 'json',
-        'kind': 'link',
-        'resubmit': true,
-        'sendreplies': false,
-        'sr': config.reddit.subreddit,
-        'title': _.get(spotifyRes, 'body.name') + ' - ' + moment().format('MMMM Do, YYYY'),
-        'url': _.get(spotifyRes, 'body.external_urls.spotify')
-    }, stickyPlaylist);
+  return reddit('/api/submit').post({
+    'api_type': 'json',
+    'kind': 'link',
+    'resubmit': true,
+    'sendreplies': false,
+    'sr': config.reddit.subreddit,
+    'title': _.get(spotifyRes, 'body.name') + ' - ' + moment().format('MMMM Do, YYYY'),
+    'url': _.get(spotifyRes, 'body.external_urls.spotify')
+  }, stickyPlaylist);
 }
 
 function stickyPlaylist(err, redditPostRes) {
-    if (err) return err;
+  if (err) return err;
 
-    return reddit('/api/set_subreddit_sticky').post({
-        id: redditPostRes.json.data.name,
-        num: 1,
-        state: true
-    }, postTracks);
+  return reddit('/api/set_subreddit_sticky').post({
+    id: redditPostRes.json.data.name,
+    num: 1,
+    state: true
+  }, postTracks);
 }
 
 var trackPosted;
 function postTracks(err) {
-    if (err) return err;
+  if (err) return err;
 
-    trackPosted = [].fill(false, 0, spotifyRes.body.tracks.items.length - 1);
+  trackPosted = [].fill(false, 0, spotifyRes.body.tracks.items.length - 1);
 
-    for (var i = 0; i < spotifyRes.body.tracks.items.length; i++) {
-        var item = spotifyRes.body.tracks.items[i];
-        var artists = item.track.artists.map(function (a) { return a.name; }).join(', ');
-        var title = artists + ' - ' + item.track.name;
+  for (var i = 0; i < spotifyRes.body.tracks.items.length; i++) {
+    var item = spotifyRes.body.tracks.items[i];
+    var artists = item.track.artists.map((a) => a.name).join(', ');
+    var title = artists + ' - ' + item.track.name;
 
-        reddit('/api/comment').post({
-            'api_type': 'json',
-            'text': '[' + title + '](' + _.get(item, 'track.external_urls.spotify') + ')',
-            'thing_id': spotifyRes.reddit.json.data.name
-        }, onTrackPosted(title, i));
-    }
+    reddit('/api/comment').post({
+      'api_type': 'json',
+      'text': '[' + title + '](' + _.get(item, 'track.external_urls.spotify') + ')',
+      'thing_id': spotifyRes.reddit.json.data.name
+    }, onTrackPosted(title, i));
+  }
 }
 
 function onTrackPosted(title, i) {
-    return function (err) {
-        if (err) return err;
-        console.log('Posted ' + title);
-        trackPosted[i] = true;
-        if (trackPosted.every((trackDone) => trackDone)) {
-            console.log('DONE!');
-        }
+  return function (err) {
+    if (err) return err;
+    console.log('Posted ' + title);
+    trackPosted[i] = true;
+    if (trackPosted.every((trackDone) => trackDone)) {
+      console.log('DONE!');
     }
-}
-                </code></pre>
+  }
+}</code></pre>
                 <aside class="notes">Still bad code, just not as ugly. Highly coupled, brittle.</aside>
             </section>
             <section>
@@ -191,6 +190,10 @@ function onTrackPosted(title, i) {
                 <pre><code>var rejectededPromise = Promise.reject(bar);</code></pre>
             </section>
             <section>
+                <h2>Browser Support Dec. 2015</h2>
+                <a href="http://caniuse.com/#feat=promises"><img src="img/caniuse-dec-2015.png" alt="Can I Use graph"></a>
+            </section>
+            <section>
                 <h2>New Music Friday Bot</h2>
                 <h3>Load New Music Friday Playlist</h3>
                 <pre><code>spotifyApi.clientCredentialsGrant()
@@ -206,23 +209,23 @@ function onTrackPosted(title, i) {
   .then(function(credentials) {
     spotifyApi.setAccessToken(credentials.body['access_token']);
     spotifyApi.getPlaylist('spotify', 'NewMusicFriday')
-        .then(function(playlist) {
-            reddit('/api/submit').post({
-                'api_type': 'json',
-                'kind': 'link',
-                'resubmit': true,
-                'sendreplies': false,
-                'sr': 'NewMusicFriday',
-                'title': _.get(playlist, 'body.name') + ' - ' + moment().format('MMMM Do, YYYY'),
-                'url': _.get(playlist, 'body.external_urls.spotify')
-            }))
+      .then(function (playlist) {
+        reddit('/api/submit').post({
+          'api_type': 'json',
+          'kind': 'link',
+          'resubmit': true,
+          'sendreplies': false,
+          'sr': 'NewMusicFriday',
+          'title': _.get(playlist, 'body.name') + ' - ' + moment().format('MMMM Do, YYYY'),
+          'url': _.get(playlist, 'body.external_urls.spotify')
         });
+     });
   });</code></pre>
                 <aside class="notes">You can see the Pyramid of Doom growing</aside>
             </section>
             <section>
                 <h2>Promise Anti-Pattern #1</h2>
-                <p>Calling <code>.then()</code> Inside a <code>.then()</code></p>
+                <p>Calling <code>.then()</code> inside <code>.then()</code></p>
             </section>
             <section>
                 <h2>New Music Friday Bot</h2>
@@ -394,7 +397,7 @@ function stickyPlaylist(playlist, redditPost) {
 …
 function postTracks(playlist, redditPost) {
     return Promise.all(playlist.body.tracks.items.map(function(item) {
-        var artists = item.track.artists.map(function (a) { return a.name; }).join(', ');
+        var artists = item.track.artists.map((a) => a.name).join(', ');
         var title = artists + ' - ' + item.track.name;
 
         return reddit('/api/comment').post({
@@ -406,7 +409,8 @@ function postTracks(playlist, redditPost) {
                 console.log('Posted ' + title);
             });
     }));
-}</code></pre>
+}
+</code></pre>
                 <aside class="notes">
                     Remember Anti-Pattern #1 - calling a <code>.then()</code> from inside <code>.then()</code>? Not applicable
                     here because <i>waves hands and trails off</i>
@@ -455,8 +459,38 @@ function onTrackPosted(title, i) {
   .catch(console.error.bind(console))</code></pre>
             </section>
             <section>
+                <h2>Anti-Bieber Code</h2>
+                <pre><code data-noescape>function postTracks(playlist, redditPost) {
+  return Promise.all(playlist.body.tracks.items.map(function(item) {
+    var artists = item.track.artists.map((a) => a.name).join(', ');
+    <mark>if (/bieber/i.test(artists)) {
+      return Promise.reject('Not A Belieber');
+    }</mark>
+    var title = artists + ' - ' + item.track.name;
+    return reddit('/api/comment').post({
+      'api_type': 'json',
+      'text': '[' + title + '](' + _.get(item, 'track.external_urls.spotify') + ')',
+      'thing_id': redditPost.json.data.name
+    })
+    .then(function() {
+      console.log('Posted ' + title);
+    });
+  }));
+}</code></pre>
+                <aside class="notes">This is the Promise version of a throw statement</aside>
+            </section>
+            <section>
+                <h2>Promise Anti-Pattern #3</h2>
+                <p>Not having a <code>.catch()</code> statement.</p>
+            </section>
+            <section>
                 <h2>The Future!</h2>
                 <h3>🔮</h3>
+            </section>
+            <section>
+                <h2>The Future!</h2>
+                <h3><code>async</code></h3>
+                <h3><code>await</code></h3>
             </section>
             <section>
                 <h2>The Future!</h2>
@@ -479,10 +513,31 @@ async function postPlaylist(playlist) {
 }</code></pre>
             </section>
             <section>
-                <h3><code>.then()</code> Rules:</h3>
+                <h2>Closing</h2>
+            </section>
+            <section>
+                <h2><code>.then()</code> Rules:</h2>
                 <ol>
                     <li>If you return a Promise from a <code>.then()</code> the outer Promise becomes the inner Promise</li>
                     <li>If you return nothing from a <code>.then()</code>, the Promise value stays the same.</li>
+                    <li>If you return a non-Promise value from a <code>.then()</code>, the Promise value becomes that value</li>
+                </ol>
+            </section>
+            <section>
+                <h2>Promise Superpowers</h2>
+                <ol>
+                    <li><code>Promise.resovle()</code></li>
+                    <li><code>Promise.reject()</code></li>
+                    <li><code>Promise.all()</code></li>
+                    <li><code>Promise.race()</code> - first value in array to resolve</li>
+                </ol>
+            </section>
+            <section>
+                <h2>Promise Anti-Patterns</h2>
+                <ol>
+                    <li>Calling <code>.then()</code> inside <code>.then()</code></li>
+                    <li>You (almost) never need to create a new, pending Promise!</li>
+                    <li>Not having a <code>.catch()</code> statement.</li>
                 </ol>
             </section>
             <section>
@@ -495,7 +550,7 @@ async function postPlaylist(playlist) {
     <script src="js/reveal.js"></script>
     <script>
         Reveal.initialize({
-                controls: false,
+                // controls: false,
                 slideNumber: 'c/t',
                 
                 // Optional reveal.js plugins
