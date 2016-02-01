@@ -465,7 +465,7 @@ function onTrackPosted(title, i) {
   return Promise.all(playlist.body.tracks.items.map(function(item) {
     var artists = item.track.artists.map((a) => a.name).join(', ');
     <mark>if (/bieber/i.test(artists)) {
-      return Promise.reject('Not A Belieber');
+      throw 'Not a Belieber!';
     }</mark>
     var title = artists + ' - ' + item.track.name;
     return reddit('/api/comment').post({
@@ -512,6 +512,7 @@ function onTrackPosted(title, i) {
 async function postPlaylist(playlist) {
   return reddit('/api/submit').post({…});
 }</code></pre>
+                <aside class="notes">Note the use of Promise.all() - it's important to understand that these are all Promises under the hood</aside>
             </section>
             <section>
                 <h2>Closing</h2>
